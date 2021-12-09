@@ -15,5 +15,7 @@ RUN mkdir -p /home/build/.config/containers \
 USER build
 WORKDIR /home/build
 
+COPY Containerfile-buildme Containerfile
+
 # Just keep the container running, allowing "oc rsh" access
 CMD ["python3", "-m", "http.server"]
