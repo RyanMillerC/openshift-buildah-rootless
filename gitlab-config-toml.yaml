@@ -1,0 +1,150 @@
+apiVersion: v1
+data:
+  config.toml: |
+    ## TODO: The following file is copied from EXAMPLES (https://docs.gitlab.com/runner/executors/kubernetes.html)
+    ## TODO: Need to modify to be Ploigos-specific, and load into the GitLab Runner pod on OpenShift
+
+    ## TODO: Cannot have concurrency right now, given the hard-coded volume names!!
+    concurrent = 1
+
+    [[runners]]
+      executor = "kubernetes"
+
+      [runners.custom_build_dir]
+        enabled = true
+
+      [runners.kubernetes]
+        ## Is formatting correct here? Is VALUE correct here??
+        pull_policy = "if-not-present"
+
+        # Optional. Kubernetes host URL. If not specified, the runner attempts to auto-discovery it.
+        #host = "https://<IP>:<PORT>"
+
+        # Optional. Kubernetes auth certificate.
+        #cert_file = "/etc/ssl/kubernetes/api.crt"
+
+        # Optional. Kubernetes auth private key.
+        #key_file = "/etc/ssl/kubernetes/api.key"
+
+        # Optional. Kubernetes auth ca certificate.
+        #ca_file = "/etc/ssl/kubernetes/ca.crt"
+
+        # Namespace to run Kubernetes jobs in.
+        namespace = "gitlab-runner"
+
+        #namespace_overwrite_allowed = "ci-.*"
+
+        #bearer_token_overwrite_allowed = true
+
+        # Run all containers with the privileged flag enabled.
+        #privileged = true
+
+        # Default Docker image to use for jobs when none is specified.
+        image = "ploigos/ploigos-base:latest"
+
+        # Optional. Runs all containers with the allowPrivilegeEscalation flag enabled.
+        #allow_privilege_escalation = true
+
+        # A list of secrets that are used to authenticate Docker image pulling.
+        #image_pull_secrets = ["docker-registry-credentials"]
+
+        [runners.kubernetes.pod_security_context]
+          run_as_non_root = true
+          run_as_user = 1001
+          fs_group = 0
+
+        #[runners.kubernetes.node_selector]
+        #  gitlab = "true"
+
+        #cpu_limit = "1"
+        #memory_limit = "1Gi"
+        #service_cpu_limit = "1"
+        #service_memory_limit = "1Gi"
+        #helper_cpu_limit = "500m"
+        #helper_memory_limit = "100Mi"
+        poll_interval = 5
+        poll_timeout = 3600
+        #dns_policy = "cluster-first"
+
+        ## Node Scheduling ##
+
+        #[runners.kubernetes.node_selector]
+        #  gitlab = "true"
+
+        #[runners.kubernetes.node_tolerations]
+        #  "node-role.kubernetes.io/master" = "NoSchedule"
+        #  "custom.toleration=value" = "NoSchedule"
+        #  "empty.value=" = "PreferNoSchedule"
+        #  "onlyKey" = ""
+
+        ## Volumes ##
+
+        ## TODO: Do we need something besides the home dir? Until proven otherwise, using the larger PVC (below)!
+        [[runners.kubernetes.volumes.pvc]]
+          name = "gitlab-ci-pvc"
+          mount_path = "/home/ploigos"
+
+        #########################################################################################
+        ## TODO
+        ##
+        ## THE FOLLOWING IS NEEDED, BUT CANNOT BE UNCOMMENTED W/O GITLAB RUNNER 13.12 OR LATER!!!
+        #########################################################################################
+
+        #[[runners.kubernetes.volumes.pvc]]
+        #  name = "gitlab-ci-build-pvc"
+        #  mount_path = "/builds"
+
+        [[runners.kubernetes.volumes.secret]]
+          name = "pgp-keys-ploigos-workflow-ref-quarkus-mvn-gitlab-min-fruit"
+          mount_path = "/var/pgp-private-keys"
+
+        #[[runners.kubernetes.volumes.config_map]]
+        #  name = "trusted-ca"
+        #  mount_path = "/etc/pki/ca-trust/source/anchors"
+        #  read_only = true
+        #  [runners.kubernetes.volumes.config_map.items]
+        #    "key" = "ca-bundle.crt"
+        #    "path" = "tls-ca-bundle.pem"
+
+        ## TODO: Can I define /opt/platform-config as a var somewhere in the toml?
+        ## TODO: Need the following two to occur only when separatePlatformConfig == true
+
+        #[[runners.kubernetes.volumes.config_map]]
+        #  name = "ploigos-platform-config"
+        #  mount_path = "/opt/platform-config/config.yml"
+        #  sub_path = "config.yml"
+
+        #[[runners.kubernetes.volumes.secret]]
+        #  name = "ploigos-platform-config-secrets"
+        #  mount_path = "/opt/platform-config/config-secrets.yml"
+        #  sub_path = "config-secrets.yml"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"config.toml":"## TODO: The following file is copied from EXAMPLES (https://docs.gitlab.com/runner/executors/kubernetes.html)\n## TODO: Need to modify to be Ploigos-specific, and load into the GitLab Runner pod on OpenShift\n\n## TODO: Can we have concurrency right now, given the hard-coded volume names?\n#concurrent = 4\n\n[[runners]]\n  executor = \"kubernetes\"\n\n  [runners.custom_build_dir]\n    enabled = true\n\n  [runners.kubernetes]\n    ## Is formatting correct here? Is VALUE correct here??\n    pull_policy = \"if-not-present\"\n\n    # Optional. Kubernetes host URL. If not specified, the runner attempts to auto-discovery it.\n    #host = \"https://\u003cIP\u003e:\u003cPORT\u003e\"\n\n    # Optional. Kubernetes auth certificate.\n    #cert_file = \"/etc/ssl/kubernetes/api.crt\"\n\n    # Optional. Kubernetes auth private key.\n    #key_file = \"/etc/ssl/kubernetes/api.key\"\n\n    # Optional. Kubernetes auth ca certificate.\n    #ca_file = \"/etc/ssl/kubernetes/ca.crt\"\n\n    # Namespace to run Kubernetes jobs in.\n    namespace = \"gitlab-runner\"\n\n    #namespace_overwrite_allowed = \"ci-.*\"\n\n    #bearer_token_overwrite_allowed = true\n\n    # Run all containers with the privileged flag enabled.\n    #privileged = true\n\n    # Default Docker image to use for jobs when none is specified.\n    image = \"ploigos/ploigos-base:latest\"\n\n    # Optional. Runs all containers with the allowPrivilegeEscalation flag enabled.\n    #allow_privilege_escalation = true\n\n    # A list of secrets that are used to authenticate Docker image pulling.\n    #image_pull_secrets = [\"docker-registry-credentials\"]\n\n    [runners.kubernetes.pod_security_context]\n      run_as_non_root = true\n      run_as_user = 1001\n      fs_group = 0\n\n    #[runners.kubernetes.node_selector]\n    #  gitlab = \"true\"\n\n    #cpu_limit = \"1\"\n    #memory_limit = \"1Gi\"\n    #service_cpu_limit = \"1\"\n    #service_memory_limit = \"1Gi\"\n    #helper_cpu_limit = \"500m\"\n    #helper_memory_limit = \"100Mi\"\n    poll_interval = 5\n    poll_timeout = 3600\n    #dns_policy = \"cluster-first\"\n\n    ## Node Scheduling ##\n\n    #[runners.kubernetes.node_selector]\n    #  gitlab = \"true\"\n\n    #[runners.kubernetes.node_tolerations]\n    #  \"node-role.kubernetes.io/master\" = \"NoSchedule\"\n    #  \"custom.toleration=value\" = \"NoSchedule\"\n    #  \"empty.value=\" = \"PreferNoSchedule\"\n    #  \"onlyKey\" = \"\"\n\n    ## Volumes ##\n\n    ## TODO: Do we need something besides the home dir? Until proven otherwise, using the larger PVC (below)!\n    [[runners.kubernetes.volumes.pvc]]\n      name = \"gitlab-ci-pvc\"\n      mount_path = \"/home/ploigos\"\n\n    #########################################################################################\n    ## TODO\n    ##\n    ## THE FOLLOWING IS NEEDED, BUT CANNOT BE UNCOMMENTED W/O GITLAB RUNNER 13.12 OR LATER!!!\n    #########################################################################################\n\n    #[[runners.kubernetes.volumes.pvc]]\n    #  name = \"gitlab-ci-build-pvc\"\n    #  mount_path = \"/builds\"\n\n    [[runners.kubernetes.volumes.secret]]\n      name = \"pgp-keys-ploigos-workflow-ref-quarkus-mvn-gitlab-std-fruit\"\n      mount_path = \"/var/pgp-private-keys\"\n\n    #[[runners.kubernetes.volumes.config_map]]\n    #  name = \"trusted-ca\"\n    #  mount_path = \"/etc/pki/ca-trust/source/anchors\"\n    #  read_only = true\n    #  [runners.kubernetes.volumes.config_map.items]\n    #    \"key\" = \"ca-bundle.crt\"\n    #    \"path\" = \"tls-ca-bundle.pem\"\n\n    ## TODO: Can I define /opt/platform-config as a var somewhere in the toml?\n    ## TODO: Need the following two to occur only when separatePlatformConfig == true\n\n    #[[runners.kubernetes.volumes.config_map]]\n    #  name = \"ploigos-platform-config\"\n    #  mount_path = \"/opt/platform-config/config.yml\"\n    #  sub_path = \"config.yml\"\n\n    #[[runners.kubernetes.volumes.secret]]\n    #  name = \"ploigos-platform-config-secrets\"\n    #  mount_path = \"/opt/platform-config/config-secrets.yml\"\n    #  sub_path = \"config-secrets.yml\"\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"gitlab-runner-ploigos-config-toml","namespace":"gitlab-runner"}}
+  creationTimestamp: "2021-06-18T14:57:00Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data: {}
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2021-06-18T14:57:00Z"
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        f:config.toml: {}
+    manager: kubectl-edit
+    operation: Update
+    time: "2021-07-07T16:47:38Z"
+  name: gitlab-runner-ploigos-config-toml
+  namespace: gitlab-runner
+  resourceVersion: "285085249"
+  uid: c2c09bf0-2ed8-4065-88a3-abcc22919a83
